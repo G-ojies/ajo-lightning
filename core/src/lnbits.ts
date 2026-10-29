@@ -41,8 +41,13 @@ export async function payInvoice(w: LnbitsWallet, bolt11: string): Promise<{ pay
 }
 
 export async function isPaid(w: LnbitsWallet, paymentHash: string): Promise<boolean> {
-  const r = await call<{ paid: boolean }>(w, w.inkey, 'GET', `/api/v1/payments/${paymentHash}`);
-  return r.paid;
+  return (await paymentStatus(w, paymentHash)).paid;
+}
+
+/** Settlement status of an invoice this wallet issued; the preimage is present once it is paid. */
+export async function paymentStatus(w: LnbitsWallet, paymentHash: string): Promise<{ paid: boolean; preimage: string | null }> {
+  const r = await call<{ paid: boolean; preimage?: string | null }>(w, w.inkey, 'GET', `/api/v1/payments/${paymentHash}`);
+  return { paid: r.paid, preimage: r.paid ? r.preimage ?? null : null };
 }
 
 export async function balanceSats(w: LnbitsWallet): Promise<number> {

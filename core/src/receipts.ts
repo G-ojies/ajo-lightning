@@ -4,7 +4,8 @@
 // Each receipt carries the Lightning payment hash and preimage, so anyone can check that sha256(preimage) equals the
 // hash (proof the payment settled) and rebuild the circle's state from the events alone with replay().
 
-import { createHash } from 'node:crypto';
+import { sha256 } from '@noble/hashes/sha2.js';
+import { bytesToHex, hexToBytes } from '@noble/hashes/utils.js';
 import { finalizeEvent, verifyEvent, type Event, type EventTemplate } from 'nostr-tools/pure';
 import type { CircleConfig, Contribution, Payout } from './index';
 
@@ -60,7 +61,7 @@ export function checkEvent(e: Event, coordinator: string): string | null {
   if (action !== 'contribution' && action !== 'payout') return 'unknown action';
   const hash = tag(e, 'payment_hash'), pre = tag(e, 'preimage');
   if (!hash || !pre || !/^[0-9a-f]{64}$/.test(pre)) return 'missing payment proof';
-  if (createHash('sha256').update(Buffer.from(pre, 'hex')).digest('hex') !== hash) return 'preimage does not match the payment hash';
+  if (bytesToHex(sha256(hexToBytes(pre))) !== hash) return 'preimage does not match the payment hash';
   const amount = Number(tag(e, 'amount')), round = Number(tag(e, 'round'));
   if (!Number.isInteger(amount) || amount <= 0 || !Number.isInteger(round) || round < 1) return 'bad amount or round';
   return null;

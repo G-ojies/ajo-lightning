@@ -1,7 +1,8 @@
 // Ajo (rotating savings circle) rules: who pays when, who collects each round, and late penalties.
 // Pure functions over plain data so every member can recompute the circle's state from the public record.
 
-import { createHash } from 'node:crypto';
+import { sha256 } from '@noble/hashes/sha2.js';
+import { bytesToHex, utf8ToBytes } from '@noble/hashes/utils.js';
 
 export interface Member {
   /** Nostr public key (hex) that signs this member's actions. */
@@ -80,7 +81,7 @@ export function validateCircle(c: CircleConfig): void {
  * advance, such as the id of the Nostr event that closed sign-ups, so anyone can recompute the draw.
  */
 export function drawOrder(pubkeys: string[], seed: string): string[] {
-  const rank = (k: string) => createHash('sha256').update(`${seed}:${k}`).digest('hex');
+  const rank = (k: string) => bytesToHex(sha256(utf8ToBytes(`${seed}:${k}`)));
   return [...pubkeys].sort((a, b) => rank(a).localeCompare(rank(b)));
 }
 

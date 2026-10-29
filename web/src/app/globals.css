@@ -1,0 +1,129 @@
+:root {
+  --bg: #f6f3ea;
+  --card: #fffdf7;
+  --ink: #1d2a22;
+  --muted: #5d6b61;
+  --line: #e2dccb;
+  --green: #0f6b45;
+  --green-soft: #e3f1e9;
+  --gold: #c8901c;
+  --gold-soft: #fbf0d6;
+  --red: #b4372b;
+  --red-soft: #fbe6e3;
+  --radius: 14px;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #111814;
+    --card: #18221c;
+    --ink: #eef3ef;
+    --muted: #a3b2a8;
+    --line: #2a3a30;
+    --green: #4cc38a;
+    --green-soft: #18352a;
+    --gold: #e3b04b;
+    --gold-soft: #3a2f16;
+    --red: #f07b6f;
+    --red-soft: #3d1f1b;
+  }
+}
+
+* { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; }
+body {
+  background: var(--bg);
+  color: var(--ink);
+  font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  font-size: 16px;
+  line-height: 1.5;
+}
+a { color: var(--green); }
+main { max-width: 680px; margin: 0 auto; padding: 20px 16px 64px; }
+h1 { font-size: 1.9rem; line-height: 1.2; margin: 8px 0 6px; }
+h2 { font-size: 1.15rem; margin: 0 0 12px; }
+p { margin: 0 0 12px; }
+.muted { color: var(--muted); }
+.small { font-size: 0.875rem; }
+.brand { font-weight: 800; letter-spacing: 0.02em; color: var(--green); text-decoration: none; }
+.brand span { color: var(--gold); }
+
+.card {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 18px;
+  margin: 16px 0;
+}
+
+label { display: block; font-weight: 600; font-size: 0.9rem; margin: 12px 0 4px; }
+input, textarea {
+  width: 100%;
+  font: inherit;
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--bg);
+  color: var(--ink);
+}
+textarea { min-height: 150px; resize: vertical; }
+.row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.hint { font-size: 0.8rem; color: var(--muted); margin-top: 4px; }
+
+button, .button {
+  font: inherit;
+  font-weight: 700;
+  border: 0;
+  border-radius: 10px;
+  padding: 11px 16px;
+  background: var(--green);
+  color: #fff;
+  cursor: pointer;
+  text-decoration: none;
+  display: inline-block;
+}
+button.secondary, .button.secondary { background: transparent; color: var(--green); border: 1px solid var(--green); }
+button.gold { background: var(--gold); color: #1d1606; }
+button:disabled { opacity: 0.5; cursor: not-allowed; }
+.full { width: 100%; }
+
+.errors { background: var(--red-soft); color: var(--red); border-radius: 10px; padding: 10px 12px; margin: 12px 0; }
+.ok { background: var(--green-soft); color: var(--green); border-radius: 10px; padding: 10px 12px; margin: 12px 0; }
+
+.pot { display: flex; justify-content: space-between; align-items: flex-end; gap: 12px; flex-wrap: wrap; }
+.pot .big { font-size: 2rem; font-weight: 800; line-height: 1; }
+.pill { white-space: nowrap; display: inline-block; font-size: 0.75rem; font-weight: 700; padding: 3px 9px; border-radius: 999px; }
+.pill.paid { background: var(--green-soft); color: var(--green); }
+.pill.owed { background: var(--gold-soft); color: var(--gold); }
+.pill.late { background: var(--red-soft); color: var(--red); }
+
+.members { list-style: none; margin: 0; padding: 0; }
+.members li { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 12px 0; border-top: 1px solid var(--line); }
+.members li:first-child { border-top: 0; }
+.members .who { font-weight: 600; }
+.members .actions { display: flex; gap: 6px; flex-wrap: wrap; justify-content: flex-end; }
+.members button { padding: 7px 10px; font-size: 0.85rem; }
+
+.progress { height: 8px; background: var(--line); border-radius: 999px; overflow: hidden; margin: 12px 0 4px; }
+.progress div { height: 100%; background: var(--green); transition: width 0.4s ease; }
+
+.schedule { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
+.schedule td { padding: 7px 10px 7px 0; border-top: 1px solid var(--line); white-space: nowrap; }
+.schedule td:last-child { padding-right: 0; }
+.schedule tr.now td { font-weight: 700; color: var(--green); }
+
+.invoice { text-align: center; }
+.invoice img { width: 220px; height: 220px; background: #fff; border-radius: 10px; padding: 8px; }
+.bolt11 { font-family: ui-monospace, monospace; font-size: 0.7rem; word-break: break-all; color: var(--muted); }
+
+.receipt { font-size: 0.85rem; padding: 8px 0; border-top: 1px solid var(--line); }
+.receipt code, .mono { font-family: ui-monospace, monospace; font-size: 0.75rem; word-break: break-all; }
+
+.steps { padding-left: 20px; margin: 0; }
+.steps li { margin-bottom: 6px; }
+footer { text-align: center; font-size: 0.8rem; color: var(--muted); margin-top: 32px; }
+
+@media (max-width: 420px) {
+  .row { grid-template-columns: 1fr; }
+  h1 { font-size: 1.6rem; }
+}
