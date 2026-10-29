@@ -33,10 +33,11 @@ export async function createInvoice(w: LnbitsWallet, amountSats: number, memo: s
   return { paymentHash: r.payment_hash, bolt11: (r.bolt11 ?? r.payment_request)!, amountSats };
 }
 
-export async function payInvoice(w: LnbitsWallet, bolt11: string): Promise<{ paymentHash: string }> {
+/** Pay an invoice. The preimage is the proof of payment that goes into the circle's Nostr receipt. */
+export async function payInvoice(w: LnbitsWallet, bolt11: string): Promise<{ paymentHash: string; preimage: string }> {
   if (!w.adminkey) throw new Error('Paying needs the wallet admin key');
-  const r = await call<{ payment_hash: string }>(w, w.adminkey, 'POST', '/api/v1/payments', { out: true, bolt11 });
-  return { paymentHash: r.payment_hash };
+  const r = await call<{ payment_hash: string; preimage: string }>(w, w.adminkey, 'POST', '/api/v1/payments', { out: true, bolt11 });
+  return { paymentHash: r.payment_hash, preimage: r.preimage };
 }
 
 export async function isPaid(w: LnbitsWallet, paymentHash: string): Promise<boolean> {
