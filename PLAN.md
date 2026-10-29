@@ -36,8 +36,7 @@ between the last contribution and the payout (shown on screen); the full history
 ## Build steps
 0. Done 2026-10-29: core/ has the circle rules (validation, verifiable random payout order from a seed, round schedule, contributions, late penalties, payouts) with 17 vitest tests.
 1. Me: scaffold, data model, circle and round logic with tests.
-2. **You:** create a free Voltage account and a Mutinynet Lightning node, or confirm we use the LNbits demo
-   (I check which one works first). Any API key you paste into .env yourself.
+2. Done 2026-10-29: Lightning = **own LNbits 1.6.2 with FakeWallet** (user's choice). demo.lnbits.com is MAINNET (lnbc invoices, real sats) and Voltage has no public sign-up, so both were dropped. Local: `./run-lnbits.sh` (127.0.0.1:5001, Python 3.12 venv at ~/.local/lnbits-venv via uv, bitstring pinned 4.2.3, admin login in .lnbits-data/admin.txt). Top up test wallets with PUT /users/api/v1/balance using an admin session. `core/scripts/round-e2e.ts` runs a full round (4 payments + payout) and passes.
 3. Me: LNbits integration (invoices, payment checks, payouts), Nostr receipts.
 4. Me: UI (mobile-first, naira values, plain language; Yoruba/Pidgin labels are a nice touch).
 5. Me: deploy, seed a demo circle of 5 members, write the pitch; you record a short demo video.
