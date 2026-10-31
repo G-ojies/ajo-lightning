@@ -49,7 +49,7 @@ export default function VerifyCircle({ id }: { id: string }) {
   }, [id]);
 
   if (error) return <div className="errors">{error}</div>;
-  if (!result) return <p className="muted">Checking signatures and payment proofs on this device…</p>;
+  if (!result) return <div className="skeleton tall" aria-label="Checking signatures and payment proofs on this device" />;
 
   const { replayed, rounds } = result;
   const allGood = result.valid === result.total && replayed.rejected.length === 0 && result.drawMatches
@@ -57,37 +57,44 @@ export default function VerifyCircle({ id }: { id: string }) {
 
   return (
     <>
-      <h1>Verify: {replayed.config.name}</h1>
-      <div className={allGood ? 'ok' : 'errors'}>
-        {allGood
-          ? 'Everything checks out. Every record is signed by the circle key, every payment proof matches, and every payout equals what was paid in.'
-          : 'Some records did not check out. They are listed below and were not counted.'}
+      <div className="page-head">
+        <p className="eyebrow">Checked on this device, not by the server</p>
+        <h1>{replayed.config.name}</h1>
+      </div>
+      <div className={`verdict ${allGood ? 'good' : 'bad'}`}>
+        <span className="verdict-mark" aria-hidden="true">{allGood ? '✓' : '!'}</span>
+        <div>
+          <strong>{allGood ? 'Everything checks out.' : 'Some records did not check out.'}</strong>
+          <p>{allGood
+            ? 'Every record is signed by the circle key, every payment proof matches, and every payout equals what was paid in.'
+            : 'They are listed below and were not counted.'}</p>
+        </div>
       </div>
 
-      <div className="card">
-        <h2>What this page checked, on your device</h2>
-        <ul className="steps">
-          <li>{result.valid} of {result.total} events carry a valid signature from the circle key <span className="mono">{result.coordinator.slice(0, 16)}…</span></li>
-          <li>{replayed.contributions.length + replayed.payouts.length} payments: for each, sha256(preimage) equals the Lightning payment hash.</li>
-          <li>Payout order {result.drawMatches ? 'matches' : 'does NOT match'} the random draw from the circle id.</li>
-          <li>{replayed.rejected.length === 0 ? 'No duplicate, forged or outsider records.' : `${replayed.rejected.length} record(s) rejected.`}</li>
-        </ul>
-      </div>
+      <div className="split even">
+        <section className="card">
+          <h2>What this page checked</h2>
+          <ul className="checks">
+            <li><strong>{result.valid} of {result.total}</strong> events carry a valid signature from the circle key <span className="mono">{result.coordinator.slice(0, 16)}…</span></li>
+            <li><strong>{replayed.contributions.length + replayed.payouts.length} payments:</strong> for each, sha256(preimage) equals the Lightning payment hash.</li>
+            <li>Payout order <strong>{result.drawMatches ? 'matches' : 'does NOT match'}</strong> the random draw from the circle id.</li>
+            <li>{replayed.rejected.length === 0 ? 'No duplicate, forged or outsider records.' : `${replayed.rejected.length} record(s) rejected.`}</li>
+          </ul>
+        </section>
 
-      <div className="card">
-        <h2>Rebuilt from the receipts</h2>
-        <table className="schedule">
-          <tbody>
+        <section className="card">
+          <h2>Rebuilt from the receipts</h2>
+          <ol className="timeline">
             {rounds.map(r => (
-              <tr key={r.round}>
-                <td>Round {r.round}</td>
-                <td>{r.recipient}</td>
-                <td>in {sats(r.paidIn)}</td>
-                <td style={{ textAlign: 'right' }}>{r.paidOut === null ? r.state : r.paidOut === r.paidIn ? `out ${sats(r.paidOut)} ✓` : `out ${sats(r.paidOut)} ✗`}</td>
-              </tr>
+              <li key={r.round} className={r.paidOut !== null ? 'done' : 'now'}>
+                <span className="t-round">{r.round}</span>
+                <span className="t-name">{r.recipient}</span>
+                <span className="t-date">in {sats(r.paidIn)}</span>
+                <span className="t-state">{r.paidOut === null ? r.state : r.paidOut === r.paidIn ? `Out ${sats(r.paidOut)}` : `Mismatch: ${sats(r.paidOut)}`}</span>
+              </li>
             ))}
-          </tbody>
-        </table>
+          </ol>
+        </section>
       </div>
 
       {replayed.rejected.length > 0 && (

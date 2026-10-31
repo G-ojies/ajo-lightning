@@ -1,33 +1,67 @@
 import Link from 'next/link';
 import CreateCircleForm from '@/components/CreateCircleForm';
+import HeroDial from '@/components/HeroDial';
+import SiteHeader from '@/components/SiteHeader';
+
+const DEMO_CIRCLE = 'f19abe04';
+
+const STEPS = [
+  ['Pay over Lightning', 'Each contribution is a Lightning invoice, settled in seconds.'],
+  ['Every payment is signed', 'A receipt carries the payment’s proof, so the record is not just the organiser’s word.'],
+  ['Anyone can check', 'The verify page rebuilds the whole circle from those receipts on your own phone.'],
+  ['The pot does not wait', 'It goes to that round’s member as soon as everyone has paid.'],
+];
 
 export default function Home() {
   return (
-    <main>
-      <Link className="brand" href="/">AJO<span>⚡</span></Link>
-      <h1>Your ajo, without trusting the organiser.</h1>
-      <p className="muted">
-        Ajo, esusu, adashe, susu: millions of us save this way. Everyone pays in each round and one person takes the
-        pot. It works until the organiser disappears, or nobody can agree who paid.
-      </p>
+    <>
+      <div className="shell">
+        <SiteHeader>
+          <Link className="nav-link" href={`/c/${DEMO_CIRCLE}`}>See a live circle</Link>
+        </SiteHeader>
 
-      <div className="card">
-        <h2>How this one is different</h2>
-        <ol className="steps">
-          <li><strong>Pay over Lightning.</strong> Each contribution is a Lightning invoice, settled in seconds from any wallet.</li>
-          <li><strong>Every payment is signed and public.</strong> A receipt with the payment&apos;s proof goes on Nostr, so the record is not just the organiser&apos;s word.</li>
-          <li><strong>Anyone can check.</strong> The verify page rebuilds the whole circle from those receipts on your own phone.</li>
-          <li><strong>The pot only waits as long as it must.</strong> It pays out to that round&apos;s member as soon as everyone has paid.</li>
-        </ol>
+        <section className="hero">
+          <div className="hero-copy">
+            <p className="eyebrow">Ajo · Esusu · Adashe · Susu</p>
+            <h1>Your ajo, without trusting the organiser.</h1>
+            <p className="lede">
+              Millions of us save this way. Everyone pays in each round and one person takes the pot. It works until the
+              organiser disappears, or nobody can agree who paid.
+            </p>
+            <div className="cta">
+              <a className="button" href="#start">Start a circle</a>
+              <Link className="button secondary" href={`/c/${DEMO_CIRCLE}`}>See a live circle</Link>
+            </div>
+          </div>
+          <div className="hero-panel adire"><HeroDial /></div>
+        </section>
+
+        <section aria-labelledby="how">
+          <h2 id="how" className="section-title">How this one is different</h2>
+          <ol className="steps-grid">
+            {STEPS.map(([title, body], i) => (
+              <li key={title}>
+                <span className="step-num">{i + 1}</span>
+                <h3>{title}</h3>
+                <p>{body}</p>
+              </li>
+            ))}
+          </ol>
+        </section>
+
+        <section className="start" id="start">
+          <div className="start-copy">
+            <h2 className="section-title">Start a circle</h2>
+            <p>Name it, list your members and set the amount. Each person gets a test wallet, so you can play a full circle right now.</p>
+            <p className="notice">
+              <strong>Test sats only.</strong> This demo runs on a test Lightning ledger, so no real money moves.
+              Naira amounts use the live BTC rate.
+            </p>
+          </div>
+          <CreateCircleForm />
+        </section>
       </div>
-
-      <CreateCircleForm />
-
-      <p className="small muted">
-        This demo runs on a test Lightning wallet: the sats are not real, and every member gets a funded test wallet so
-        you can play a full circle. Amounts in naira use the live BTC rate.
-      </p>
-      <footer>Built for the Dakar Bitcoin Hack by BTrust.</footer>
-    </main>
+      <footer className="site-footer">Built for the Dakar Bitcoin Hack by BTrust.</footer>
+    </>
   );
 }

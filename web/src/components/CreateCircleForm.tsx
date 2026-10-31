@@ -36,9 +36,8 @@ export default function CreateCircleForm() {
 
   return (
     <form onSubmit={submit} className="card">
-      <h2>Start a circle</h2>
       <label htmlFor="name">Circle name</label>
-      <input id="name" name="name" defaultValue="Oja Oba market ajo" maxLength={60} required />
+      <input id="name" name="name" autoComplete="off" defaultValue="Oja Oba market ajo" maxLength={60} required />
 
       <label htmlFor="members">Members, one per line</label>
       <textarea id="members" name="members" defaultValue={'Ada\nBayo\nChika\nDupe\nEmeka'} required />
@@ -67,7 +66,7 @@ export default function CreateCircleForm() {
       </div>
 
       {errors.length > 0 && <div className="errors">{errors.map(e => <div key={e}>{e}</div>)}</div>}
-      <button type="submit" className="full" disabled={busy} style={{ marginTop: 16 }}>
+      <button type="submit" className="full submit" disabled={busy}>
         {busy ? 'Setting up wallets…' : 'Create circle'}
       </button>
     </form>

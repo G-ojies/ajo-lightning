@@ -5,6 +5,7 @@ import QRCode from 'qrcode';
 import { useCallback, useEffect, useState } from 'react';
 import type { CircleView } from '@/lib/circles';
 import { day, naira, sats, when } from '@/lib/format';
+import CircleDial, { type Seat } from './CircleDial';
 
 type View = CircleView & { ngnPerSat: number | null };
 interface OpenInvoice { pubkey: string; name: string; bolt11: string; paymentHash: string; amountSats: number; qr: string }
@@ -68,135 +69,158 @@ export default function CircleDashboard({ id }: { id: string }) {
     }
   }
 
-  if (missing) return <div className="card">This circle does not exist. <Link href="/">Start one</Link>.</div>;
-  if (!view) return <p className="muted">Loading circle…</p>;
+  if (missing) return <div className="card empty"><h2>This circle does not exist</h2><p>It may have expired. <Link href="/#start">Start a new one</Link>.</p></div>;
+  if (!view) return <div className="split" aria-label="Loading circle"><div className="skeleton tall" /><div className="skeleton tall" /></div>;
 
   const { config, status, ngnPerSat } = view;
   const nameOf = (pk: string) => config.members.find(m => m.pubkey === pk)?.name ?? pk.slice(0, 8);
-  const target = config.contributionSats * config.members.length;
   const ngn = (n: number) => naira(n, ngnPerSat);
+  const seats: Seat[] = config.members.map(m => ({
+    key: m.pubkey,
+    name: m.name,
+    state: !status || status.paid.includes(m.pubkey) ? 'paid' : status.late.includes(m.pubkey) ? 'late' : 'owed',
+    collects: m.pubkey === status?.recipient,
+  }));
 
   return (
     <>
-      <h1>{config.name}</h1>
-      <p className="muted">
-        {config.members.length} members · {sats(config.contributionSats)}{ngn(config.contributionSats) && ` (${ngn(config.contributionSats)})`} each,
-        every {config.roundLengthDays} day{config.roundLengthDays > 1 ? 's' : ''}
-      </p>
+      <div className="page-head">
+        <p className="eyebrow">{config.members.length} members · every {config.roundLengthDays} day{config.roundLengthDays > 1 ? 's' : ''}</p>
+        <h1>{config.name}</h1>
+        <p className="lede">
+          {sats(config.contributionSats)}{ngn(config.contributionSats) && ` (${ngn(config.contributionSats)})`} each round. Grace {config.graceHours}h, late fee {sats(config.latePenaltySats)}.
+        </p>
+      </div>
 
-      {message && <div className={message.ok ? 'ok' : 'errors'}>{message.text}</div>}
+      <div className="toast-slot" aria-live="polite">
+        {message && <div className={message.ok ? 'ok' : 'errors'}>{message.text}</div>}
+      </div>
 
-      {status ? (
-        <div className="card">
-          <div className="pot">
-            <div>
-              <div className="muted small">Round {status.round} of {view.rounds} · pot for <strong>{nameOf(status.recipient)}</strong></div>
-              <div className="big">{sats(status.potSats)}</div>
-              {ngn(status.potSats) && <div className="muted">{ngn(status.potSats)}</div>}
-            </div>
-            <div className="small muted">Due {when(status.dueAt)}<br />Grace {config.graceHours}h, late fee {sats(config.latePenaltySats)}</div>
+      <div className="split">
+        <aside className="side">
+          <div className="hero-panel adire">
+            <CircleDial seats={seats} tone="indigo"
+              label={status ? `Round ${status.round}: ${status.paid.length} of ${config.members.length} paid, ${nameOf(status.recipient)} collects.` : 'Every member has collected.'}>
+              {status ? (
+                <>
+                  <div className="dial-kicker">Round {status.round} of {view.rounds}</div>
+                  <div className="dial-amount">{status.potSats.toLocaleString('en-NG')}</div>
+                  <div className="dial-kicker">sats{ngn(status.potSats) && ` · ${ngn(status.potSats)}`}</div>
+                </>
+              ) : (
+                <>
+                  <div className="dial-amount small">Complete</div>
+                  <div className="dial-kicker">Everyone has collected</div>
+                </>
+              )}
+            </CircleDial>
+            {status && (
+              <div className="panel-foot">
+                <span><strong>{nameOf(status.recipient)}</strong> collects · {status.paid.length} of {config.members.length} paid</span>
+                <span>Due {when(status.dueAt)}</span>
+              </div>
+            )}
           </div>
-          <div className="progress"><div style={{ width: `${Math.min(100, (status.potSats / target) * 100)}%` }} /></div>
-          <div className="small muted">{status.paid.length} of {config.members.length} paid</div>
 
-          {status.state === 'ready-to-pay' && (
-            <button className="gold full" style={{ marginTop: 14 }} disabled={busy !== null}
+          {status?.state === 'ready-to-pay' && (
+            <button className="gold full" disabled={busy !== null}
               onClick={() => run('payout', async () => {
                 const r = await post<{ recipient: string; amountSats: number }>(`/api/circles/${id}/payout`);
                 return `Paid ${sats(r.amountSats)} to ${r.recipient}. Payout receipt published.`;
               })}>
-              {busy === 'payout' ? 'Paying out…' : `Everyone has paid: send ${sats(status.potSats)} to ${nameOf(status.recipient)}`}
+              {busy === 'payout' ? 'Paying out…' : `Send ${sats(status.potSats)} to ${nameOf(status.recipient)}`}
             </button>
           )}
-        </div>
-      ) : (
-        <div className="card ok">This circle is complete: every member has collected the pot once.</div>
-      )}
 
-      {invoice && (
-        <div className="card invoice" id="invoice">
-          <h2>{invoice.name} pays {sats(invoice.amountSats)}</h2>
-          {/* eslint-disable-next-line @next/next/no-img-element -- QR is a generated data URL, nothing to optimise */}
-          <img src={invoice.qr} alt="Lightning invoice QR code" />
-          <p className="small muted">Scan with any Lightning wallet. This page updates by itself when it is paid.</p>
-          <p className="bolt11">{invoice.bolt11}</p>
-          <div style={{ display: 'flex', gap: 8, justifyContent: 'center' }}>
-            <button className="secondary" onClick={() => navigator.clipboard.writeText(invoice.bolt11)}>Copy invoice</button>
-            <button className="secondary" onClick={() => setInvoice(null)}>Close</button>
-          </div>
-        </div>
-      )}
+          {invoice && (
+            <div className="card invoice" id="invoice">
+              <h2>{invoice.name} pays {sats(invoice.amountSats)}</h2>
+              {/* eslint-disable-next-line @next/next/no-img-element -- QR is a generated data URL, nothing to optimise */}
+              <img src={invoice.qr} alt="Lightning invoice QR code" />
+              <p className="small muted">This demo invoice is test-only, so real wallets cannot pay it. Use Pay with test wallet. In a live circle, members scan this with any Lightning wallet.</p>
+              <p className="bolt11">{invoice.bolt11}</p>
+              <div className="button-row">
+                <button className="secondary" onClick={() => navigator.clipboard.writeText(invoice.bolt11)}>Copy invoice</button>
+                <button className="secondary" onClick={() => setInvoice(null)}>Close</button>
+              </div>
+            </div>
+          )}
+        </aside>
 
-      {status && (
-        <div className="card">
-          <h2>This round</h2>
-          <ul className="members">
-            {config.members.map(m => {
-              const paid = status.paid.includes(m.pubkey);
-              const late = status.late.includes(m.pubkey);
-              const owed = status.owed[m.pubkey];
-              return (
-                <li key={m.pubkey}>
-                  <div>
-                    <div className="who">{m.name}{m.pubkey === status.recipient && ' 🎉'}</div>
-                    {paid ? <span className="pill paid">Paid</span>
-                      : <span className={`pill ${late ? 'late' : 'owed'}`}>{late ? 'Late · ' : 'Owes '}{sats(owed)}</span>}
-                  </div>
-                  {!paid && (
-                    <div className="actions">
-                      <button className="secondary" disabled={busy !== null}
-                        onClick={() => run(`inv-${m.pubkey}`, async () => {
-                          const r = await post<{ bolt11: string; paymentHash: string; amountSats: number }>(`/api/circles/${id}/invoice`, { pubkey: m.pubkey });
-                          const qr = await QRCode.toDataURL(`lightning:${r.bolt11}`.toUpperCase(), { margin: 1, width: 440 });
-                          setInvoice({ pubkey: m.pubkey, name: m.name, qr, ...r });
-                          return `Invoice ready for ${m.name}.`;
-                        })}>
-                        Invoice
-                      </button>
-                      <button disabled={busy !== null}
-                        onClick={() => run(`pay-${m.pubkey}`, async () => {
-                          await post(`/api/circles/${id}/demo-pay`, { pubkey: m.pubkey });
-                          return `${m.name} paid from their test wallet. Receipt published.`;
-                        })}>
-                        {busy === `pay-${m.pubkey}` ? 'Paying…' : 'Pay (test wallet)'}
-                      </button>
-                    </div>
-                  )}
+        <div className="main-col">
+          {status && (
+            <section className="card">
+              <h2>This round</h2>
+              <ul className="members">
+                {config.members.map(m => {
+                  const paid = status.paid.includes(m.pubkey);
+                  const late = status.late.includes(m.pubkey);
+                  const owed = status.owed[m.pubkey];
+                  return (
+                    <li key={m.pubkey}>
+                      <span className={`avatar ${paid ? 'paid' : late ? 'late' : ''}`} aria-hidden="true">{m.name.slice(0, 1).toUpperCase()}</span>
+                      <div className="who-wrap">
+                        <div className="who">{m.name}{m.pubkey === status.recipient && <span className="pill collects">Collects</span>}</div>
+                        {paid ? <span className="pill paid">Paid</span>
+                          : <span className={`pill ${late ? 'late' : 'owed'}`}>{late ? 'Late · ' : 'Owes '}{sats(owed)}</span>}
+                      </div>
+                      {!paid && (
+                        <div className="actions">
+                          <button className="secondary" disabled={busy !== null}
+                            onClick={() => run(`inv-${m.pubkey}`, async () => {
+                              const r = await post<{ bolt11: string; paymentHash: string; amountSats: number }>(`/api/circles/${id}/invoice`, { pubkey: m.pubkey });
+                              const qr = await QRCode.toDataURL(`lightning:${r.bolt11}`.toUpperCase(), { margin: 1, width: 440 });
+                              setInvoice({ pubkey: m.pubkey, name: m.name, qr, ...r });
+                              return `Invoice ready for ${m.name}.`;
+                            })}>
+                            Invoice
+                          </button>
+                          <button disabled={busy !== null}
+                            onClick={() => run(`pay-${m.pubkey}`, async () => {
+                              await post(`/api/circles/${id}/demo-pay`, { pubkey: m.pubkey });
+                              return `${m.name} paid from their test wallet. Receipt published.`;
+                            })}>
+                            {busy === `pay-${m.pubkey}` ? 'Paying…' : 'Pay with test wallet'}
+                          </button>
+                        </div>
+                      )}
+                    </li>
+                  );
+                })}
+              </ul>
+            </section>
+          )}
+
+          <section className="card">
+            <h2>Who collects when</h2>
+            <ol className="timeline">
+              {view.schedule.map(s => (
+                <li key={s.round} className={s.paidOutSats ? 'done' : s.round === view.round ? 'now' : undefined}>
+                  <span className="t-round">{s.round}</span>
+                  <span className="t-name">{s.name}</span>
+                  <span className="t-date">{day(s.dueAt)}</span>
+                  <span className="t-state">{s.paidOutSats ? `Paid ${sats(s.paidOutSats)}` : s.round === view.round ? 'Now' : ''}</span>
                 </li>
-              );
-            })}
-          </ul>
-        </div>
-      )}
+              ))}
+            </ol>
+            <p className="hint">Order drawn from the circle id with sha256, so anyone can recheck it.</p>
+          </section>
 
-      <div className="card">
-        <h2>Who collects when</h2>
-        <table className="schedule">
-          <tbody>
-            {view.schedule.map(s => (
-              <tr key={s.round} className={s.round === view.round ? 'now' : undefined}>
-                <td>Round {s.round}</td>
-                <td>{s.name}</td>
-                <td className="small">{day(s.dueAt)}</td>
-                <td style={{ textAlign: 'right', whiteSpace: 'normal' }}>{s.paidOutSats ? `✓ ${sats(s.paidOutSats)}` : s.round === view.round ? 'now' : ''}</td>
-              </tr>
+          <section className="card">
+            <div className="card-head">
+              <h2>Public record</h2>
+              <Link className="button secondary" href={`/c/${id}/verify`}>Verify this circle</Link>
+            </div>
+            <p className="small muted">Each entry is a signed Nostr event carrying the Lightning proof of payment.</p>
+            {view.receipts.length === 0 && <p className="small muted">No payments yet. The first member to pay appears here.</p>}
+            {view.receipts.map(r => (
+              <div className={`receipt${r.action === 'payout' ? ' payout' : ''}`} key={r.id}>
+                <div><strong>{r.name}</strong> {r.action === 'payout' ? 'collected' : 'paid in'} {sats(r.amountSats)} <span className="muted">· round {r.round}</span></div>
+                <div className="mono muted">event {r.id.slice(0, 16)}…</div>
+              </div>
             ))}
-          </tbody>
-        </table>
-        <p className="hint">Order drawn from the circle id with sha256, so anyone can recheck it.</p>
-      </div>
-
-      <div className="card">
-        <h2>Public record</h2>
-        <p className="small muted">Every payment below is a signed Nostr event carrying the Lightning proof of payment.</p>
-        <Link className="button secondary" href={`/c/${id}/verify`}>Verify this circle yourself</Link>
-        {view.receipts.length === 0 && <p className="small muted" style={{ marginTop: 12 }}>No payments yet.</p>}
-        {view.receipts.map(r => (
-          <div className="receipt" key={r.id}>
-            {r.action === 'payout' ? '🎉 Payout' : 'Paid in'} · round {r.round} · <strong>{r.name}</strong> · {sats(r.amountSats)}
-            <div className="mono muted">event {r.id.slice(0, 16)}…</div>
-          </div>
-        ))}
+          </section>
+        </div>
       </div>
     </>
   );
