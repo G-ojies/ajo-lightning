@@ -29,7 +29,7 @@ const unix = (iso: string) => Math.floor(Date.parse(iso) / 1000);
 export function circleEvent(c: CircleConfig, secretKey: Uint8Array): Event {
   const t: EventTemplate = {
     kind: AJO_KIND,
-    created_at: unix(c.startsAt),
+    created_at: Math.floor(Date.now() / 1000), // Relays refuse future timestamps, and startsAt is usually ahead.
     tags: [['t', 'ajo'], ['action', 'circle'], ['circle', c.id]],
     content: JSON.stringify(c),
   };

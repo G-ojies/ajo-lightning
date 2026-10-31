@@ -23,7 +23,7 @@ export default function Home() {
         <section className="hero">
           <div className="hero-copy">
             <p className="eyebrow">Ajo · Esusu · Adashe · Susu</p>
-            <h1>Your ajo, without trusting the organiser.</h1>
+            <h1>Your ajo, with a record nobody can quietly change.</h1>
             <p className="lede">
               Millions of us save this way. Everyone pays in each round and one person takes the pot. It works until the
               organiser disappears, or nobody can agree who paid.

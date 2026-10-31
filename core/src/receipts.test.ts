@@ -83,3 +83,10 @@ describe('replay', () => {
     expect(() => replay([contribution('ada')], 'another-circle', coordinator)).toThrow(/No valid circle event/);
   });
 });
+
+describe('circleEvent timestamp', () => {
+  it('is not in the future, even when the circle starts later', () => {
+    const later = { ...circle, startsAt: new Date(Date.now() + 86_400_000).toISOString() };
+    expect(circleEvent(later, sk).created_at).toBeLessThanOrEqual(Math.floor(Date.now() / 1000) + 1);
+  });
+});
