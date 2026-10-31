@@ -15,11 +15,14 @@
   },
   "dependencies": {
     "@noble/hashes": "^2.0.1",
-    "nostr-tools": "^2.25.4"
+    "nostr-tools": "^2.25.4",
+    "@noble/curves": "^2.0.1",
+    "@scure/base": "^2.0.0"
   },
   "exports": {
     ".": "./src/index.ts",
     "./receipts": "./src/receipts.ts",
-    "./lnbits": "./src/lnbits.ts"
+    "./lnbits": "./src/lnbits.ts",
+    "./bolt11": "./src/bolt11.ts"
   }
 }

@@ -8,9 +8,9 @@ import {
   amountDue, currentRound, drawOrder, payoutFor, roundCount, roundStatus, validateCircle,
   type CircleConfig, type RoundStatus,
 } from '@ajo/core';
-import { createInvoice, payInvoice, paymentStatus } from '@ajo/core/lnbits';
 import { circleEvent, receiptEvent, replay } from '@ajo/core/receipts';
-import { createWallet, topUp } from './lnbits-admin';
+import { countToday } from './kv';
+import { createInvoice, createWallet, payInvoice, paymentStatus, topUp } from './lightning';
 import { loadCircle, saveCircle, withCircle, type CircleRecord } from './store';
 
 export interface NewCircle {
@@ -35,6 +35,7 @@ export interface CircleView {
 }
 
 const DAY = 86_400_000;
+const MAX_NEW_CIRCLES_PER_DAY = 40;
 const nowIso = () => new Date().toISOString();
 
 function checkInput(n: NewCircle): string[] {
@@ -53,6 +54,7 @@ function checkInput(n: NewCircle): string[] {
 export async function createCircle(input: NewCircle): Promise<{ id: string } | { errors: string[] }> {
   const errors = checkInput(input);
   if (errors.length) return { errors };
+  if ((await countToday('circles')) > MAX_NEW_CIRCLES_PER_DAY) return { errors: ['The demo has reached its limit of new circles for today. Please try tomorrow.'] };
   const id = randomUUID().slice(0, 8);
   const sk = generateSecretKey();
   const names = input.memberNames.map(s => s.trim()).filter(Boolean);
@@ -161,7 +163,7 @@ export async function demoPay(id: string, pubkey: string) {
   const rec = await loadCircle(id);
   const wallet = rec?.memberWallets[pubkey];
   if (!wallet) throw new Error('No demo wallet for this member');
-  await payInvoice(wallet, inv.bolt11);
+  await payInvoice(wallet, inv);
   return settle(id, inv.paymentHash);
 }
 
@@ -177,7 +179,7 @@ export function payout(id: string) {
     if (!due) throw new Error('Not everyone has paid this round yet');
     const wallet = rec.memberWallets[due.pubkey];
     const inv = await createInvoice(wallet, due.amountSats, `${r.config.name}: round ${round} payout`);
-    const paid = await payInvoice(rec.pot, inv.bolt11);
+    const paid = await payInvoice(rec.pot, inv);
     rec.events.push(receiptEvent(rec.id, 'payout', {
       round, pubkey: due.pubkey, amountSats: due.amountSats, paymentHash: inv.paymentHash, preimage: paid.preimage, paidAt: nowIso(),
     }, hexToBytes(rec.coordinatorSecretKey)));
