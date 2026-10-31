@@ -38,6 +38,9 @@ the invoice is paid. No real sats move and real wallets cannot pay these invoice
 
 - Each member gets a funded test wallet and a server-generated Nostr key so a whole circle can be played from one
   screen. In real use members pay from their own Lightning wallets and hold their own keys.
-- The coordinator key signs receipts; it can refuse to record a payment, but it cannot forge one, because every
-  receipt must carry a preimage that matches a real Lightning payment hash.
+- The coordinator key signs receipts and the coordinator holds the pot wallet, so it knows contribution preimages
+  before they are paid. A receipt alone therefore cannot prove money moved. What protects members: a payer keeps the
+  invoice and preimage as their own proof if a payment is left out, a false "paid" leaves the pot short at payout
+  where the recipient sees it, and the log is signed, so the organiser cannot quietly rewrite it. The pot is still
+  custodial between the last contribution and the payout.
 - Receipts are served by the app at `/api/circles/<id>/events`; publishing them to public Nostr relays is the next step.
