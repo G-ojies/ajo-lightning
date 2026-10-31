@@ -13,7 +13,7 @@ to take the organiser's word for who paid.
 ## Layout
 
 - `core/`: the circle rules (`index.ts`), Nostr receipts and replay (`receipts.ts`), and a small LNbits client
-  (`lnbits.ts`). Pure TypeScript, runs in Node and the browser. `npm test` runs 26 tests.
+  (`lnbits.ts`), plus a BOLT11 invoice encoder (`bolt11.ts`). Pure TypeScript, runs in Node and the browser. `npm test` runs 29 tests.
 - `web/`: Next.js app (create circle, round dashboard with QR invoices, payout, verify page).
 
 ## Run it locally
@@ -26,6 +26,13 @@ The demo uses LNbits with its FakeWallet funding source: the sats are not real.
 
 `core/scripts/round-e2e.ts` plays a full round against LNbits and checks that replaying the receipts gives the same
 result as the live round.
+
+## Hosted mode
+
+The hosted demo needs no LNbits or disk. `AJO_LIGHTNING=embedded` swaps in a small test ledger
+(`web/src/lib/test-lightning.ts`) that issues signed BOLT11 invoices for signet and keeps each preimage secret until
+the invoice is paid. No real sats move and real wallets cannot pay these invoices. `KV_REST_API_URL` and
+`KV_REST_API_TOKEN` move storage and locks to Upstash Redis.
 
 ## Limits of the demo
 
