@@ -6,7 +6,8 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "postinstall": "npm install --prefix ../core --omit=dev --no-audit --no-fund"
   },
   "dependencies": {
     "@ajo/core": "file:../core",
