@@ -13,7 +13,7 @@ to take the organiser's word for who paid.
 ## Layout
 
 - `core/`: the circle rules (`index.ts`), Nostr receipts and replay (`receipts.ts`), and a small LNbits client
-  (`lnbits.ts`), plus a BOLT11 invoice encoder (`bolt11.ts`). Pure TypeScript, runs in Node and the browser. `npm test` runs 29 tests.
+  (`lnbits.ts`), plus a BOLT11 invoice encoder (`bolt11.ts`). Pure TypeScript, runs in Node and the browser. `npm test` runs 30 tests.
 - `web/`: Next.js app (create circle, round dashboard with QR invoices, payout, verify page).
 
 ## Run it locally
@@ -43,4 +43,5 @@ the invoice is paid. No real sats move and real wallets cannot pay these invoice
   invoice and preimage as their own proof if a payment is left out, a false "paid" leaves the pot short at payout
   where the recipient sees it, and the log is signed, so the organiser cannot quietly rewrite it. The pot is still
   custodial between the last contribution and the payout.
-- Receipts are served by the app at `/api/circles/<id>/events`; publishing them to public Nostr relays is the next step.
+- Receipts are served by the app at `/api/circles/<id>/events`. The demo circle was published to nos.lol and
+  relay.primal.net with `scripts/publish-relays.py`; automatic publishing for every circle is the next step.

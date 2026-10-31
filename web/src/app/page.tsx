@@ -3,7 +3,7 @@ import CreateCircleForm from '@/components/CreateCircleForm';
 import HeroDial from '@/components/HeroDial';
 import SiteHeader from '@/components/SiteHeader';
 
-const DEMO_CIRCLE = 'f19abe04';
+const DEMO_CIRCLE = '40cb54ca';
 
 const STEPS = [
   ['Pay over Lightning', 'Each contribution is a Lightning invoice, settled in seconds.'],
